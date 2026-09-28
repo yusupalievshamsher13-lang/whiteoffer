@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CS2 Shox Drop Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        csdark: '#0f141d',
+                        csdarker: '#090d14',
+                        csaccent: '#f97316',
+                        csgold: '#eab308',
+                        cspurple: '#a855f7',
+                        csblue: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #090d14;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d14;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1f2937;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #374151;
+        }
+        /* Roulette animation blur */
+        .roulette-blur {
+            filter: blur(1px);
+        }
+        /* Glow effects */
+        .glow-orange {
+            box-shadow: 0 0 25px rgba(249, 115, 22, 0.35);
+        }
+        .glow-gold {
+            box-shadow: 0 0 30px rgba(234, 179, 8, 0.5);
+        }
+        .glow-purple {
+            box-shadow: 0 0 25px rgba(168, 85, 247, 0.4);
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col selection:bg-orange-500 selection:text-white">
+
+    <!-- HEADER -->
+    <header class="sticky top-0 z-50 bg-csdarker/90 backdrop-blur-md border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 h-20 flex items-center justify-between">
+            <!-- Logo & Brand -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('cases')">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-500/30 transform hover:rotate-6 transition-transform">
+                    <i class="fa-solid fa-trash-can text-2xl text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-black tracking-wider bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-500 bg-clip-text text-transparent">SHOX DROP</h1>
+                    <span class="text-xs text-gray-400 font-medium tracking-widest uppercase">CS2 Meme Case Simulator</span>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <nav class="hidden md:flex items-center space-x-2 bg-gray-900/80 p-1.5 rounded-xl border border-gray-800">
+                <button onclick="switchTab('cases')" id="nav-cases" class="px-5 py-2 rounded-lg font-semibold text-sm transition-all bg-orange-500 text-white shadow-md shadow-orange-500/20">
+                    <i class="fa-solid fa-box-open mr-2"></i> Кейсы
+                </button>
+                <button onclick="switchTab('inventory')" id="nav-inventory" class="px-5 py-2 rounded-lg font-semibold text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-all relative">
+                    <i class="fa-solid fa-warehouse mr-2"></i> Инвентарь <span id="inv-badge" class="ml-1.5 px-2 py-0.5 text-xs bg-gray-700 text-gray-300 rounded-full">0</span>
+                </button>
+                <button onclick="switchTab('upgrade')" id="nav-upgrade" class="px-5 py-2 rounded-lg font-semibold text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-all">
+                    <i class="fa-solid fa-file-contract mr-2"></i> Контракты
+                </button>
+                <button onclick="switchTab('leaderboard')" id="nav-leaderboard" class="px-5 py-2 rounded-lg font-semibold text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-all">
+                    <i class="fa-solid fa-trophy mr-2"></i> Топ стримеров
+                </button>
+            </nav>
+
+            <!-- User Balance & Controls -->
+            <div class="flex items-center space-x-4">
+                <!-- Balance Box -->
+                <div class="flex items-center bg-gray-900/90 border border-gray-700/80 rounded-xl px-4 py-2 shadow-inner">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center mr-2.5 text-amber-400">
+                        <i class="fa-solid fa-coins"></i>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Ваш баланс</div>
+                        <div id="user-balance" class="text-base font-extrabold text-amber-400">2,500 <span class="text-xs">₽</span></div>
+                    </div>
+                    <button onclick="openDepositModal()" class="ml-3 w-8 h-8 rounded-lg bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white flex items-center justify-center shadow-md transform hover:scale-105 transition-all">
+                        <i class="fa-solid fa-plus text-xs"></i>
+                    </button>
+                </div>
+
+                <!-- Sound & Profile -->
+                <div class="flex items-center space-x-2">
+                    <button onclick="toggleSound()" id="sound-btn" class="w-10 h-10 rounded-xl bg-gray-900 border border-gray-800 hover:bg-gray-800 flex items-center justify-center text-gray-300 transition-colors" title="Звуки">
+                        <i class="fa-solid fa-volume-high" id="sound-icon"></i>
+                    </button>
+                    <div class="relative group">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-orange-500 to-purple-600 p-0.5 cursor-pointer">
+                            <div class="w-full h-full bg-gray-900 rounded-[10px] flex items-center justify-center font-bold text-orange-400">
+                                SH
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- LIVE DROPS TICKER -->
+    <div class="bg-csdark border-b border-gray-800/80 py-2 px-4 overflow-hidden relative">
+        <div class="flex items-center space-x-2 text-xs font-semibold text-gray-400 uppercase tracking-widest mr-4 absolute left-4 z-10 bg-csdark/95 pr-4 h-full flex items-center">
+            <span class="w-2 h-2 rounded-full bg-green-500 animate-ping mr-2"></span> Живой дроп:
+        </div>
+        <div id="live-ticker" class="flex items-center space-x-4 overflow-x-auto whitespace-nowrap scrollbar-none pl-36">
+            <!-- Dynamic ticker items generated by JS -->
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-8">
+
+        <!-- CASES TAB CONTENT -->
+        <div id="tab-cases" class="space-y-8">
+            <!-- Hero Banner -->
+            <div class="relative rounded-3xl bg-gradient-to-r from-orange-950/60 via-gray-900 to-purple-950/50 border border-orange-500/30 p-8 md:p-12 overflow-hidden shadow-2xl">
+                <div class="absolute -right-10 -bottom-10 opacity-20 pointer-events-none">
+                    <i class="fa-solid fa-trash-can text-[250px] text-orange-500"></i>
+                </div>
+                <div class="max-w-2xl relative z-10 space-y-4">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-bold uppercase tracking-wider">
+                        <i class="fa-solid fa-fire animate-bounce"></i> Официальный симулятор Шоха
+                    </div>
+                    <h2 class="text-3xl md:text-5xl font-black tracking-tight text-white">
+                        ОТКРЫВАЙ МУСОР И КАСИ <span class="bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">ЛЕГЕНДАРНЫЕ НОЖИ!</span>
+                    </h2>
+                    <p class="text-gray-400 text-sm md:text-base">
+                        Никакого скама — только честный рандомный мусор от стримеров: тактические носки, кастрюли, просроченные энергетики и редчайшие ножи-открывашки!
+                    </p>
+                    <div class="pt-2 flex flex-wrap gap-4">
+                        <button onclick="openPromoModal()" class="px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-bold text-white shadow-lg shadow-orange-500/30 transform hover:-translate-y-0.5 transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-ticket"></i> <span>Ввести промокод</span>
+                        </button>
+                        <a href="#cases-grid" class="px-6 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 font-bold text-gray-200 border border-gray-700 transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-arrow-down"></i> <span>Выбрать кейс</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Categories -->
+            <div class="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-none" id="category-filters">
+                <button onclick="filterCases('all')" class="category-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-orange-500 text-white shadow-md shadow-orange-500/20 transition-all whitespace-nowrap">Все кейсы</button>
+                <button onclick="filterCases('trash')" class="category-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-800 transition-all whitespace-nowrap">🗑️ Мусорка</button>
+                <button onclick="filterCases('streamer')" class="category-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-800 transition-all whitespace-nowrap">📺 Стримерские</button>
+                <button onclick="filterCases('elite')" class="category-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-800 transition-all whitespace-nowrap">💎 Элитные</button>
+                <button onclick="filterCases('knife')" class="category-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-800 transition-all whitespace-nowrap">🔪 Ножи</button>
+            </div>
+
+            <!-- Cases Grid -->
+            <div id="cases-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Cases will be rendered here dynamically -->
+            </div>
+        </div>
+
+        <!-- INVENTORY TAB CONTENT -->
+        <div id="tab-inventory" class="hidden space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gray-900/60 p-6 rounded-2xl border border-gray-800">
+                <div>
+                    <h2 class="text-2xl font-black text-white">Инвентарь игрока</h2>
+                    <p class="text-gray-400 text-sm">Ваш собственный склад мусора и редкого лута. Продавайте ненужное или отправляйте в контракты.</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="sellAllTrash()" class="px-4 py-2.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 font-bold text-sm transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-trash-arrow-up"></i> <span>Продать весь мусор (< 50₽)</span>
+                    </button>
+                    <button onclick="sellAllInventory()" class="px-4 py-2.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 font-bold text-sm transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-coins"></i> <span>Продать всё</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Inventory Filters -->
+            <div class="flex items-center space-x-2 overflow-x-auto pb-2">
+                <button onclick="filterInventory('all')" class="inv-filter-btn px-4 py-2 rounded-xl font-bold text-xs bg-orange-500 text-white transition-all">Все предметы (<span id="count-all">0</span>)</button>
+                <button onclick="filterInventory('trash')" class="inv-filter-btn px-4 py-2 rounded-xl font-bold text-xs bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800 transition-all">Мусор (<span id="count-trash">0</span>)</button>
+                <button onclick="filterInventory('common')" class="inv-filter-btn px-4 py-2 rounded-xl font-bold text-xs bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800 transition-all">Обычное (<span id="count-common">0</span>)</button>
+                <button onclick="filterInventory('rare')" class="inv-filter-btn px-4 py-2 rounded-xl font-bold text-xs bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800 transition-all">Редкое (<span id="count-rare">0</span>)</button>
+                <button onclick="filterInventory('epic')" class="inv-filter-btn px-4 py-2 rounded-xl font-bold text-xs bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800 transition-all">Эпическое (<span id="count-epic">0</span>)</button>
+                <button onclick="filterInventory('legendary')" class="inv-filter-btn px-4 py-2 rounded-xl font-bold text-xs bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800 transition-all">Легендарное (<span id="count-legendary">0</span>)</button>
+            </div>
+
+            <!-- Inventory Grid -->
+            <div id="inventory-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <!-- Items populated by JS -->
+            </div>
+        </div>
+
+        <!-- UPGRADE / CONTRACTS TAB CONTENT -->
+        <div id="tab-upgrade" class="hidden space-y-8">
+            <div class="max-w-3xl mx-auto text-center space-y-3">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-bold uppercase tracking-wider">
+                    <i class="fa-solid fa-atom"></i> Алхимический обмен
+                </div>
+                <h2 class="text-3xl font-black text-white">Контракт обмена мусора</h2>
+                <p class="text-gray-400 text-sm">
+                    Сложите 5 одинаковых по редкости предметов из вашего инвентаря и получите 1 случайный предмет более высокого уровня!
+                </p>
+            </div>
+
+            <div class="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-5 gap-6 items-center">
+                <!-- Selected Slots for Contract (5 slots) -->
+                <div class="md:col-span-3 bg-gray-900/80 border border-gray-800 rounded-3xl p-6 space-y-6">
+                    <div class="flex items-center justify-between">
+                        <span class="text-sm font-bold text-gray-400 uppercase tracking-wider">Слоты обмена (0 / 5)</span>
+                        <button onclick="clearContract()" class="text-xs text-red-400 hover:text-red-300 font-semibold"><i class="fa-solid fa-rotate-right mr-1"></i> Очистить</button>
+                    </div>
+
+                    <div id="contract-slots" class="grid grid-cols-5 gap-3">
+                        <!-- 5 slot elements -->
+                        <div class="aspect-square rounded-2xl border-2 border-dashed border-gray-700 bg-gray-950/50 flex flex-col items-center justify-center text-gray-600 contract-slot" data-index="0"><i class="fa-solid fa-plus text-lg"></i></div>
+                        <div class="aspect-square rounded-2xl border-2 border-dashed border-gray-700 bg-gray-950/50 flex flex-col items-center justify-center text-gray-600 contract-slot" data-index="1"><i class="fa-solid fa-plus text-lg"></i></div>
+                        <div class="aspect-square rounded-2xl border-2 border-dashed border-gray-700 bg-gray-950/50 flex flex-col items-center justify-center text-gray-600 contract-slot" data-index="2"><i class="fa-solid fa-plus text-lg"></i></div>
+                        <div class="aspect-square rounded-2xl border-2 border-dashed border-gray-700 bg-gray-950/50 flex flex-col items-center justify-center text-gray-600 contract-slot" data-index="3"><i class="fa-solid fa-plus text-lg"></i></div>
+                        <div class="aspect-square rounded-2xl border-2 border-dashed border-gray-700 bg-gray-950/50 flex flex-col items-center justify-center text-gray-600 contract-slot" data-index="4"><i class="fa-solid fa-plus text-lg"></i></div>
+                    </div>
+
+                    <button onclick="executeContract()" id="execute-contract-btn" disabled class="w-full py-4 rounded-2xl bg-gray-800 text-gray-500 font-bold uppercase tracking-wider cursor-not-allowed transition-all shadow-lg flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> <span>Подписать контракт</span>
+                    </button>
+                </div>
+
+                <!-- Available items to select for contract -->
+                <div class="md:col-span-2 bg-gray-900/80 border border-gray-800 rounded-3xl p-6 space-y-4">
+                    <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider">Доступные предметы</h3>
+                    <div id="contract-inventory-list" class="grid grid-cols-3 gap-2.5 max-h-[300px] overflow-y-auto pr-1">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- LEADERBOARD TAB CONTENT -->
+        <div id="tab-leaderboard" class="hidden space-y-6 max-w-4xl mx-auto">
+            <div class="text-center space-y-2">
+                <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
+                    <i class="fa-solid fa-crown"></i> Зал славы Шоха
+                </div>
+                <h2 class="text-3xl font-black text-white">Топ стримеров и лудоманов</h2>
+                <p class="text-gray-400 text-sm">Самые удачливые игроки, выбившие легендарные кастрюли и ножи.</p>
+            </div>
+
+            <div class="bg-gray-900/80 border border-gray-800 rounded-3xl overflow-hidden shadow-xl">
+                <div class="grid grid-cols-12 bg-gray-950/60 px-6 py-4 text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-800">
+                    <div class="col-span-2">Ранг</div>
+                    <div class="col-span-6">Игрок</div>
+                    <div class="col-span-4 text-right">Выбито рублей</div>
+                </div>
+                <div id="leaderboard-list" class="divide-y divide-gray-800/60">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- CASE OPENING MODAL / ROULETTE SCREEN -->
+    <div id="case-modal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-xl flex items-center justify-center p-4 hidden">
+        <div class="max-w-4xl w-full bg-gradient-to-b from-gray-900 to-csdark border border-gray-800 rounded-3xl p-6 md:p-10 shadow-2xl relative overflow-hidden flex flex-col items-center">
+            
+            <!-- Close Button -->
+            <button onclick="closeCaseModal()" class="absolute top-6 right-6 w-10 h-10 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 flex items-center justify-center transition-colors">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Case Title -->
+            <div class="text-center space-y-2 mb-8">
+                <span id="modal-case-category" class="px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/30 text-orange-400 text-xs font-bold uppercase tracking-wider">Кейс</span>
+                <h3 id="modal-case-title" class="text-2xl md:text-3xl font-black text-white">Название кейса</h3>
+            </div>
+
+            <!-- ROULETTE CONTAINER -->
+            <div class="w-full relative py-12 my-4 bg-gray-950/80 rounded-2xl border border-gray-800 overflow-hidden flex items-center justify-center">
+                <!-- Center Indicator Line -->
+                <div class="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-orange-500 via-amber-400 to-orange-500 z-20 shadow-[0_0_15px_rgba(249,115,22,0.8)]"></div>
+                <div class="absolute top-2 left-1/2 -translate-x-1/2 z-20 bg-orange-500 text-white font-extrabold text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-b-md shadow">WIN</div>
+
+                <!-- Roulette Track -->
+                <div id="roulette-track" class="flex items-center space-x-4 transition-all duration-0 ease-out py-4 px-2" style="transform: translateX(0px);">
+                    <!-- Items generated by JS -->
+                </div>
+            </div>
+
+            <!-- Result Display / Win Info -->
+            <div id="win-result-box" class="hidden text-center space-y-4 my-4 p-6 rounded-2xl bg-gray-900 border border-gray-800 w-full max-w-md animate-fade-in">
+                <div class="text-xs font-bold uppercase tracking-widest text-gray-400">Вы выиграли предмет:</div>
+                <div id="win-item-display" class="flex items-center justify-center space-x-4">
+                    <!-- Icon / Name -->
+                </div>
+                <div class="flex items-center justify-center space-x-3 pt-2">
+                    <button onclick="sellWonItem()" class="px-5 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 font-bold text-sm text-gray-200 border border-gray-700 transition-all">Продать за <span id="win-sell-price">0</span> ₽</button>
+                    <button onclick="spinAgain()" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 font-bold text-sm text-white shadow-lg shadow-orange-500/30 transition-all">Открыть еще</button>
+                </div>
+            </div>
+
+            <!-- Spin Controls -->
+            <div id="spin-controls" class="flex items-center space-x-4 mt-6">
+                <button onclick="startSpin()" id="spin-btn" class="px-8 py-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-500 hover:from-orange-600 hover:to-yellow-600 font-black text-lg text-white shadow-xl shadow-orange-500/30 transform hover:scale-105 transition-all flex items-center space-x-3">
+                    <i class="fa-solid fa-key text-xl"></i>
+                    <span>Открыть кейс за <span id="modal-case-price">0</span> ₽</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- DEPOSIT MODAL -->
+    <div id="deposit-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="max-w-md w-full bg-gray-900 border border-gray-800 rounded-3xl p-6 space-y-6 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-wallet text-orange-500"></i> <span>Пополнение баланса</span>
+                </h3>
+                <button onclick="closeDepositModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-gray-400 text-sm">Выберите сумму для пополнения счета в симуляторе Шоха:</p>
+            <div class="grid grid-cols-3 gap-3">
+                <button onclick="addBalance(500)" class="p-3 rounded-xl bg-gray-800 hover:bg-gray-700 font-bold text-amber-400 border border-gray-700">+500 ₽</button>
+                <button onclick="addBalance(1000)" class="p-3 rounded-xl bg-gray-800 hover:bg-gray-700 font-bold text-amber-400 border border-gray-700">+1,000 ₽</button>
+                <button onclick="addBalance(5000)" class="p-3 rounded-xl bg-gray-800 hover:bg-gray-700 font-bold text-amber-400 border border-gray-700">+5,000 ₽</button>
+            </div>
+            <button onclick="closeDepositModal()" class="w-full py-3 rounded-xl bg-orange-500 hover:bg-orange-600 font-bold text-white shadow-lg shadow-orange-500/20">Готово</button>
+        </div>
+    </div>
+
+    <!-- PROMOCODE MODAL -->
+    <div id="promo-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="max-w-md w-full bg-gray-900 border border-gray-800 rounded-3xl p-6 space-y-6 shadow-2xl">
+            <div class="flex items-center justify-between">
+                <h3 class="text-xl font-bold text-white flex items-center space-x-2">
+                    <i class="fa-solid fa-ticket text-orange-500"></i> <span>Активация промокода</span>
+                </h3>
+                <button onclick="closePromoModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p class="text-gray-400 text-sm">Введите секретный промокод от Шоха (например: <code class="text-orange-400 font-bold">SHOX</code> или <code class="text-orange-400 font-bold">MUSEUM</code>):</p>
+            <input type="text" id="promo-input" placeholder="Введите промокод..." class="w-full px-4 py-3 bg-gray-950 border border-gray-700 rounded-xl text-white font-bold focus:outline-none focus:border-orange-500 uppercase">
+            <div id="promo-msg" class="text-xs font-semibold text-center h-4"></div>
+            <button onclick="applyPromoCode()" class="w-full py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 font-bold text-white shadow-lg shadow-orange-500/20">Активировать</button>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST CONTAINER -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- JAVASCRIPT GAME LOGIC -->
+    <script>
+        // --- DATA & STATE ---
+        let state = {
+            balance: 2500,
+            soundEnabled: true,
+            inventory: [
+                { id: 'item_1', name: 'Тактическая затычка', category: 'trash', price: 12, rarity: 'trash', icon: 'fa-plug', color: 'text-gray-400', bg: 'bg-gray-800/40 border-gray-700' },
+                { id: 'item_2', name: 'Старый носок Шоха', category: 'trash', price: 25, rarity: 'trash', icon: 'fa-socks', color: 'text-gray-400', bg: 'bg-gray-800/40 border-gray-700' },
+                { id: 'item_3', name: 'Кастрюля бабушкина', category: 'common', price: 150, rarity: 'common', icon: 'fa-utensils', color: 'text-blue-400', bg: 'bg-blue-950/40 border-blue-800/50' }
+            ],
+            currentCase: null,
+            lastWonItem: null,
+            contractItems: [null, null, null, null, null],
+            usedPromos: []
+        };
+
+        // Rarity definitions
+        const rarities = {
+            trash: { name: 'Мусор', color: 'text-gray-400', bg: 'bg-gray-800/40 border-gray-700', badgeBg: 'bg-gray-800 text-gray-300' },
+            common: { name: 'Обычное', color: 'text-blue-400', bg: 'bg-blue-950/40 border-blue-800/50', badgeBg: 'bg-blue-900/50 text-blue-300' },
+            rare: { name: 'Редкое', color: 'text-purple-400', bg: 'bg-purple-950/40 border-purple-800/50', badgeBg: 'bg-purple-900/50 text-purple-300' },
+            epic: { name: 'Эпическое', color: 'text-pink-400', bg: 'bg-pink-950/40 border-pink-800/50', badgeBg: 'bg-pink-900/50 text-pink-300' },
+            legendary: { name: 'Легендарное', color: 'text-amber-400', bg: 'bg-amber-950/40 border-amber-800/50', badgeBg: 'bg-amber-900/50 text-amber-300' }
+        };
+
+        // Cases Database
+        const casesData = [
+            {
+                id: 'trash_novice',
+                name: 'Мусорка новичка',
+                category: 'trash',
+                price: 99,
+                badge: '🗑️ Популярный',
+                imageBg: 'from-gray-950 via-gray-900 to-gray-950',
+                borderCol: 'border-gray-800 hover:border-gray-600',
+                items: [
+                    { name: 'Тактическая затычка', price: 12, rarity: 'trash', icon: 'fa-plug', chance: 40 },
+                    { name: 'Старый носок Шоха', price: 25, rarity: 'trash', icon: 'fa-socks', chance: 30 },
+                    { name: 'Пустая банка энергетика', price: 45, rarity: 'common', icon: 'fa-can-food', chance: 15 },
+                    { name: 'Сломанная клавиатура', price: 120, rarity: 'common', icon: 'fa-keyboard', chance: 10 },
+                    { name: 'Кастрюля бабушкина', price: 350, rarity: 'rare', icon: 'fa-utensils', chance: 4.5 },
+                    { name: 'Нож-открывашка "Мусорщик"', price: 2500, rarity: 'legendary', icon: 'fa-knife', chance: 0.5 }
+                ]
+            },
+            {
+                id: 'streamer_case',
+                name: 'Кейс стримера',
+                category: 'streamer',
+                price: 299,
+                badge: '📺 Топ стрим',
+                imageBg: 'from-orange-950/40 via-gray-900 to-gray-950',
+                borderCol: 'border-orange-500/30 hover:border-orange-500',
+                items: [
+                    { name: 'Просроченный чипс', price: 35, rarity: 'trash', icon: 'fa-cookie', chance: 35 },
+                    { name: 'Коврик с пятном от чая', price: 150, rarity: 'common', icon: 'fa-square', chance: 30 },
+                    { name: 'Микрофон с шумами', price: 450, rarity: 'rare', icon: 'fa-microphone', chance: 20 },
+                    { name: 'Светящиеся наушники стримера', price: 1200, rarity: 'epic', icon: 'fa-headphones', chance: 12 },
+                    { name: 'Легендарное кресло Шоха', price: 7500, rarity: 'legendary', icon: 'fa-chair', chance: 3 }
+                ]
+            },
+            {
+                id: 'elite_trash',
+                name: 'Элитный мусор',
+                category: 'elite',
+                price: 799,
+                badge: '💎 Элита',
+                imageBg: 'from-purple-950/40 via-gray-900 to-gray-950',
+                borderCol: 'border-purple-500/30 hover:border-purple-500',
+                items: [
+                    { name: 'Золотая мусорная урна', price: 250, rarity: 'common', icon: 'fa-trash', chance: 40 },
+                    { name: 'Паленые AirPods', price: 900, rarity: 'rare', icon: 'fa-ear-listen', chance: 35 },
+                    { name: 'Видеокарта после майнинга', price: 3400, rarity: 'epic', icon: 'fa-microchip', chance: 20 },
+                    { name: 'Бриллиантовый ершик для унитаза', price: 18000, rarity: 'legendary', icon: 'fa-wand-magic', chance: 5 }
+                ]
+            },
+            {
+                id: 'knife_trap',
+                name: 'Ножевой капкан',
+                category: 'knife',
+                price: 1999,
+                badge: '🔪 100% Ножи',
+                imageBg: 'from-amber-950/50 via-gray-900 to-csdark',
+                borderCol: 'border-amber-500/40 hover:border-amber-500',
+                items: [
+                    { name: 'Штык-нож | Ржавый гвоздь', price: 1200, rarity: 'rare', icon: 'fa-scissors', chance: 50 },
+                    { name: 'Керамбит | Мусорный пакет', price: 4500, rarity: 'epic', icon: 'fa-feather', chance: 35 },
+                    { name: 'Бабочка | Золотая кастрюля', price: 14000, rarity: 'legendary', icon: 'fa-gem', chance: 12 },
+                    { name: 'Шоховский Нож-Канделябр (StatTrak)', price: 45000, rarity: 'legendary', icon: 'fa-crown', chance: 3 }
+                ]
+            }
+        ];
+
+        // Live Ticker initial mock drops
+        let liveDropsMock = [
+            { name: 'Кастрюля бабушкина', user: 'ShoxFan_22', price: 350, rarity: 'rare' },
+            { name: 'Нож-открывашка "Мусорщик"', user: 'CS2_God', price: 2500, rarity: 'legendary' },
+            { name: 'Старый носок Шоха', user: 'ProPlayer', price: 25, rarity: 'trash' },
+            { name: 'Легендарное кресло Шоха', user: 'LuckyBoy', price: 7500, rarity: 'legendary' },
+            { name: 'Светящиеся наушники стримера', user: 'Viewer99', price: 1200, rarity: 'epic' }
+        ];
+
+        // --- WEB AUDIO API SOUND EFFECTS ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (!state.soundEnabled) return;
+            try {
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                if (type === 'click') {
+                    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.05);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.05);
+                } else if (type === 'tick') {
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.03, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.03);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.03);
+                } else if (type === 'win') {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(500, audioCtx.currentTime + 0.1);
+                    osc.frequency.setValueAtTime(700, audioCtx.currentTime + 0.2);
+                    osc.frequency.setValueAtTime(900, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.6);
+                }
+            } catch (e) {
+                // Audio context policy fallback
+            }
+        }
+
+        // --- INIT & NAVIGATION ---
+        window.onload = function() {
+            renderCases();
+            renderInventory();
+            renderLiveTicker();
+            renderLeaderboard();
+            setupContractSlots();
+        };
+
+        function switchTab(tabId) {
+            playSound('click');
+            ['cases', 'inventory', 'upgrade', 'leaderboard'].forEach(t => {
+                document.getElementById(`tab-${t}`).classList.add('hidden');
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (navBtn) {
+                    navBtn.className = "px-5 py-2 rounded-lg font-semibold text-sm text-gray-400 hover:text-white hover:bg-gray-800 transition-all";
+                }
+            });
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.className = "px-5 py-2 rounded-lg font-semibold text-sm bg-orange-500 text-white shadow-md shadow-orange-500/20";
+            }
+        }
+
+        function toggleSound() {
+            state.soundEnabled = !state.soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            icon.className = state.soundEnabled ? "fa-solid fa-volume-high" : "fa-solid fa-volume-xmark text-red-400";
+            showToast(state.soundEnabled ? "Звуки включены" : "Звуки выключены", "info");
+        }
+
+        function updateBalanceUI() {
+            document.getElementById('user-balance').innerHTML = `${state.balance.toLocaleString()} <span class="text-xs">₽</span>`;
+            document.getElementById('inv-badge').innerText = state.inventory.length;
+            renderInventory();
+            renderContractInventory();
+        }
+
+        // --- RENDER CASES ---
+        function renderCases(filter = 'all') {
+            const grid = document.getElementById('cases-grid');
+            grid.innerHTML = '';
+            
+            const filtered = filter === 'all' ? casesData : casesData.filter(c => c.category === filter);
+
+            filtered.forEach(c => {
+                grid.innerHTML += `
+                    <div onclick="openCaseModal('${c.id}')" class="group bg-gradient-to-b ${c.imageBg} border ${c.borderCol} rounded-3xl p-6 cursor-pointer transform hover:-translate-y-2 transition-all duration-300 shadow-xl flex flex-col justify-between relative overflow-hidden">
+                        <div class="absolute top-4 right-4 px-3 py-1 rounded-full bg-gray-900/80 border border-gray-700 text-xs font-bold text-orange-400">
+                            ${c.badge}
+                        </div>
+                        <div class="py-12 flex items-center justify-center relative">
+                            <div class="absolute inset-0 bg-orange-500/5 rounded-full blur-2xl group-hover:bg-orange-500/15 transition-all"></div>
+                            <i class="fa-solid fa-box-open text-7xl text-orange-400 transform group-hover:scale-110 group-hover:rotate-6 transition-transform"></i>
+                        </div>
+                        <div class="space-y-3 relative z-10">
+                            <h3 class="text-lg font-black text-white group-hover:text-orange-400 transition-colors">${c.name}</h3>
+                            <div class="flex items-center justify-between pt-2 border-t border-gray-800">
+                                <span class="text-xs text-gray-400 font-semibold uppercase tracking-wider">Открыть за</span>
+                                <span class="text-base font-extrabold text-amber-400">${c.price} ₽</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterCases(category) {
+            playSound('click');
+            document.querySelectorAll('.category-btn').forEach(btn => {
+                btn.className = "category-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-gray-900 text-gray-400 hover:bg-gray-800 hover:text-white border border-gray-800 transition-all whitespace-nowrap";
+            });
+            event.target.className = "category-btn px-5 py-2.5 rounded-xl font-bold text-sm bg-orange-500 text-white shadow-md shadow-orange-500/20 transition-all whitespace-nowrap";
+            renderCases(category);
+        }
+
+        // --- CASE OPENING ROULETTE ---
+        function openCaseModal(caseId) {
+            playSound('click');
+            state.currentCase = casesData.find(c => c.id === caseId);
+            if (!state.currentCase) return;
+
+            document.getElementById('modal-case-title').innerText = state.currentCase.name;
+            document.getElementById('modal-case-price').innerText = state.currentCase.price;
+            document.getElementById('win-result-box').classList.add('hidden');
+            document.getElementById('spin-controls').classList.remove('hidden');
+
+            buildRouletteTrack(state.currentCase.items);
+            document.getElementById('case-modal').classList.remove('hidden');
+        }
+
+        function closeCaseModal() {
+            playSound('click');
+            document.getElementById('case-modal').classList.add('hidden');
+        }
+
+        function buildRouletteTrack(items, highlightIndex = -1) {
+            const track = document.getElementById('roulette-track');
+            track.innerHTML = '';
+            // Generate 50 items for smooth roulette effect
+            const trackItems = [];
+            for (let i = 0; i < 50; i++) {
+                const randItem = getRandomWeightedItem(items);
+                trackItems.push(randItem);
+            }
+
+            trackItems.forEach((item, idx) => {
+                const rarityObj = rarities[item.rarity];
+                track.innerHTML += `
+                    <div class="flex-shrink-0 w-36 h-40 bg-gray-900 border ${rarityObj.badgeBg} rounded-2xl p-4 flex flex-col items-center justify-between relative shadow-lg roulette-item" data-index="${idx}">
+                        <span class="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded ${rarityObj.badgeBg}">${rarityObj.name}</span>
+                        <div class="w-12 h-12 rounded-xl bg-gray-950 flex items-center justify-center ${rarityObj.color} text-2xl my-2">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </div>
+                        <div class="text-xs font-bold text-white text-center truncate w-full">${item.name}</div>
+                        <div class="text-xs font-extrabold text-amber-400">${item.price} ₽</div>
+                    </div>
+                `;
+            });
+            track.style.transform = 'translateX(0px)';
+        }
+
+        function getRandomWeightedItem(items) {
+            const totalWeight = items.reduce((sum, item) => sum + item.chance, 0);
+            let randomNum = Math.random() * totalWeight;
+            for (let item of items) {
+                if (randomNum < item.chance) return item;
+                randomNum -= item.chance;
+            }
+            return items[0];
+        }
+
+        function startSpin() {
+            if (state.balance < state.currentCase.price) {
+                showToast("Недостаточно средств на балансе!", "error");
+                return;
+            }
+
+            state.balance -= state.currentCase.price;
+            updateBalanceUI();
+
+            document.getElementById('spin-btn').disabled = true;
+            document.getElementById('win-result-box').classList.add('hidden');
+
+            const track = document.getElementById('roulette-track');
+            const itemWidth = 160; // card width + margin
+            const targetIndex = 38; // winning index near the end
+            
+            // Re-build track with winning item at targetIndex
+            const items = state.currentCase.items;
+            const trackItems = [];
+            let winningItem = null;
+
+            for (let i = 0; i < 50; i++) {
+                if (i === targetIndex) {
+                    winningItem = getRandomWeightedItem(items);
+                    trackItems.push(winningItem);
+                } else {
+                    trackItems.push(getRandomWeightedItem(items));
+                }
+            }
+
+            track.innerHTML = '';
+            trackItems.forEach((item, idx) => {
+                const rarityObj = rarities[item.rarity];
+                track.innerHTML += `
+                    <div class="flex-shrink-0 w-36 h-40 bg-gray-900 border ${rarityObj.badgeBg} rounded-2xl p-4 flex flex-col items-center justify-between relative shadow-lg" data-index="${idx}">
+                        <span class="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded ${rarityObj.badgeBg}">${rarityObj.name}</span>
+                        <div class="w-12 h-12 rounded-xl bg-gray-950 flex items-center justify-center ${rarityObj.color} text-2xl my-2">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </div>
+                        <div class="text-xs font-bold text-white text-center truncate w-full">${item.name}</div>
+                        <div class="text-xs font-extrabold text-amber-400">${item.price} ₽</div>
+                    </div>
+                `;
+            });
+
+            // Animate roulette spin
+            const offset = -(targetIndex * itemWidth) + (document.querySelector('.relative.py-12').clientWidth / 2) - (itemWidth / 2) + (Math.random() * 40 - 20);
+            track.style.transition = 'transform 4s cubic-bezier(0.15, 0.85, 0.15, 1)';
+            track.style.transform = `translateX(${offset}px)`;
+
+            // Sound ticks during spin
+            let tickInterval = setInterval(() => { playSound('tick'); }, 150);
+            setTimeout(() => { clearInterval(tickInterval); }, 4000);
+
+            // Finish spin
+            setTimeout(() => {
+                playSound('win');
+                state.lastWonItem = { ...winningItem, id: 'item_' + Date.now() };
+                state.inventory.unshift(state.lastWonItem);
+                updateBalanceUI();
+
+                // Add to live ticker
+                addLiveDrop(state.lastWonItem.name, 'Вы', state.lastWonItem.price, state.lastWonItem.rarity);
+
+                // Show result box
+                const rarityObj = rarities[winningItem.rarity];
+                document.getElementById('win-item-display').innerHTML = `
+                    <div class="w-16 h-16 rounded-2xl bg-gray-950 border ${rarityObj.badgeBg} flex items-center justify-center ${rarityObj.color} text-3xl shadow-lg">
+                        <i class="fa-solid ${winningItem.icon}"></i>
+                    </div>
+                    <div class="text-left">
+                        <span class="text-xs font-bold uppercase px-2 py-0.5 rounded ${rarityObj.badgeBg}">${rarityObj.name}</span>
+                        <h4 class="text-lg font-black text-white mt-1">${winningItem.name}</h4>
+                        <div class="text-sm font-extrabold text-amber-400">${winningItem.price} ₽</div>
+                    </div>
+                `;
+                document.getElementById('win-sell-price').innerText = winningItem.price;
+                document.getElementById('spin-controls').classList.add('hidden');
+                document.getElementById('win-result-box').classList.remove('hidden');
+                document.getElementById('spin-btn').disabled = false;
+            }, 4100);
+        }
+
+        function spinAgain() {
+            startSpin();
+        }
+
+        function sellWonItem() {
+            if (!state.lastWonItem) return;
+            state.balance += state.lastWonItem.price;
+            state.inventory = state.inventory.filter(i => i.id !== state.lastWonItem.id);
+            updateBalanceUI();
+            showToast(`Предмет продан за ${state.lastWonItem.price} ₽`, "success");
+            document.getElementById('win-result-box').classList.add('hidden');
+            state.lastWonItem = null;
+        }
+
+        // --- INVENTORY MANAGEMENT ---
+        let currentInvFilter = 'all';
+
+        function renderInventory(filter = currentInvFilter) {
+            currentInvFilter = filter;
+            const grid = document.getElementById('inventory-grid');
+            grid.innerHTML = '';
+
+            // Update counts
+            document.getElementById('count-all').innerText = state.inventory.length;
+            document.getElementById('count-trash').innerText = state.inventory.filter(i => i.rarity === 'trash').length;
+            document.getElementById('count-common').innerText = state.inventory.filter(i => i.rarity === 'common').length;
+            document.getElementById('count-rare').innerText = state.inventory.filter(i => i.rarity === 'rare').length;
+            document.getElementById('count-epic').innerText = state.inventory.filter(i => i.rarity === 'epic').length;
+            document.getElementById('count-legendary').innerText = state.inventory.filter(i => i.rarity === 'legendary').length;
+
+            const filtered = filter === 'all' ? state.inventory : state.inventory.filter(i => i.rarity === filter);
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-12 text-center text-gray-500 font-semibold">Инвентарь пуст. Откройте кейсы!</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const rarityObj = rarities[item.rarity];
+                grid.innerHTML += `
+                    <div class="bg-gray-900 border ${rarityObj.badgeBg} rounded-2xl p-4 flex flex-col justify-between space-y-3 relative group shadow-lg">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[9px] font-extrabold uppercase px-2 py-0.5 rounded ${rarityObj.badgeBg}">${rarityObj.name}</span>
+                            <button onclick="sellItem('${item.id}')" class="text-gray-500 hover:text-red-400 text-xs transition-colors" title="Продать"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                        <div class="w-12 h-12 mx-auto rounded-xl bg-gray-950 flex items-center justify-center ${rarityObj.color} text-2xl my-1 group-hover:scale-110 transition-transform">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </div>
+                        <div class="text-xs font-bold text-white text-center truncate">${item.name}</div>
+                        <div class="flex items-center justify-between pt-2 border-t border-gray-800">
+                            <span class="text-xs font-extrabold text-amber-400">${item.price} ₽</span>
+                            <button onclick="sellItem('${item.id}')" class="px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-[10px] font-bold text-gray-300">Продать</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterInventory(filter) {
+            playSound('click');
+            document.querySelectorAll('.inv-filter-btn').forEach(btn => {
+                btn.className = "inv-filter-btn px-4 py-2 rounded-xl font-bold text-xs bg-gray-900 text-gray-400 hover:bg-gray-800 border border-gray-800 transition-all";
+            });
+            event.target.className = "inv-filter-btn px-4 py-2 rounded-xl font-bold text-xs bg-orange-500 text-white transition-all";
+            renderInventory(filter);
+        }
+
+        function sellItem(id) {
+            playSound('click');
+            const item = state.inventory.find(i => i.id === id);
+            if (!item) return;
+            state.balance += item.price;
+            state.inventory = state.inventory.filter(i => i.id !== id);
+            updateBalanceUI();
+            showToast(`Предмет "${item.name}" продан за ${item.price} ₽`, "success");
+        }
+
+        function sellAllTrash() {
+            playSound('click');
+            const trashItems = state.inventory.filter(i => i.price < 50);
+            if (trashItems.length === 0) {
+                showToast("Нет дешевого мусора для продажи", "info");
+                return;
+            }
+            const total = trashItems.reduce((sum, i) => sum + i.price, 0);
+            state.balance += total;
+            state.inventory = state.inventory.filter(i => i.price >= 50);
+            updateBalanceUI();
+            showToast(`Продано мусора на сумму ${total} ₽`, "success");
+        }
+
+        function sellAllInventory() {
+            playSound('click');
+            if (state.inventory.length === 0) return;
+            const total = state.inventory.reduce((sum, i) => sum + i.price, 0);
+            state.balance += total;
+            state.inventory = [];
+            updateBalanceUI();
+            showToast(`Весь инвентарь продан за ${total} ₽`, "success");
+        }
+
+        // --- TRADE-UP CONTRACTS ---
+        function setupContractSlots() {
+            renderContractInventory();
+        }
+
+        function renderContractInventory() {
+            const list = document.getElementById('contract-inventory-list');
+            list.innerHTML = '';
+            state.inventory.forEach(item => {
+                const rarityObj = rarities[item.rarity];
+                const isSelected = state.contractItems.includes(item.id);
+                list.innerHTML += `
+                    <div onclick="${isSelected ? '' : `addToContract('${item.id}')`}" class="aspect-square bg-gray-950 border ${rarityObj.badgeBg} rounded-xl p-2 flex flex-col items-center justify-between cursor-pointer ${isSelected ? 'opacity-40 cursor-not-allowed' : 'hover:border-orange-500'} transition-all relative">
+                        <div class="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center ${rarityObj.color} text-base">
+                            <i class="fa-solid ${item.icon}"></i>
+                        </div>
+                        <div class="text-[9px] font-bold text-white text-center truncate w-full">${item.name}</div>
+                    </div>
+                `;
+            });
+            renderContractSlotsUI();
+        }
+
+        function addToContract(id) {
+            playSound('click');
+            const emptyIdx = state.contractItems.indexOf(null);
+            if (emptyIdx === -1) return;
+            state.contractItems[emptyIdx] = id;
+            renderContractInventory();
+        }
+
+        function removeFromContract(index) {
+            playSound('click');
+            state.contractItems[index] = null;
+            renderContractInventory();
+        }
+
+        function renderContractSlotsUI() {
+            const slotsContainer = document.getElementById('contract-slots');
+            slotsContainer.innerHTML = '';
+            let filledCount = 0;
+
+            state.contractItems.forEach((itemId, idx) => {
+                if (itemId) {
+                    filledCount++;
+                    const item = state.inventory.find(i => i.id === itemId);
+                    const rarityObj = rarities[item.rarity];
+                    slotsContainer.innerHTML += `
+                        <div onclick="removeFromContract(${idx})" class="aspect-square rounded-2xl border ${rarityObj.badgeBg} bg-gray-950 flex flex-col items-center justify-center p-2 relative cursor-pointer group shadow">
+                            <div class="w-8 h-8 rounded-lg bg-gray-900 flex items-center justify-center ${rarityObj.color} text-lg">
+                                <i class="fa-solid ${item.icon}"></i>
+                            </div>
+                            <div class="text-[9px] font-bold text-white truncate w-full text-center mt-1">${item.name}</div>
+                            <div class="absolute inset-0 bg-red-500/20 rounded-2xl opacity-0 group-hover:opacity-100 flex items-center justify-center text-red-400 font-bold text-xs transition-opacity"><i class="fa-solid fa-minus"></i></div>
+                        </div>
+                    `;
+                } else {
+                    slotsContainer.innerHTML += `
+                        <div class="aspect-square rounded-2xl border-2 border-dashed border-gray-700 bg-gray-950/50 flex flex-col items-center justify-center text-gray-600">
+                            <i class="fa-solid fa-plus text-lg"></i>
+                        </div>
+                    `;
+                }
+            });
+
+            const btn = document.getElementById('execute-contract-btn');
+            if (filledCount === 5) {
+                btn.disabled = false;
+                btn.className = "w-full py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold uppercase tracking-wider shadow-lg shadow-purple-600/30 transition-all flex items-center justify-center space-x-2";
+            } else {
+                btn.disabled = true;
+                btn.className = "w-full py-4 rounded-2xl bg-gray-800 text-gray-500 font-bold uppercase tracking-wider cursor-not-allowed transition-all shadow-lg flex items-center justify-center space-x-2";
+            }
+        }
+
+        function clearContract() {
+            playSound('click');
+            state.contractItems = [null, null, null, null, null];
+            renderContractInventory();
+        }
+
+        function executeContract() {
+            playSound('win');
+            // Check if all 5 items same rarity or upgrade level
+            const items = state.contractItems.map(id => state.inventory.find(i => i.id === id)).filter(Boolean);
+            if (items.length !== 5) return;
+
+            // Remove used items
+            state.inventory = state.inventory.filter(i => !state.contractItems.includes(i.id));
+
+            // Generate upgraded reward
+            const basePrice = items.reduce((sum, i) => sum + i.price, 0) / 5;
+            const rewardPrice = Math.round(basePrice * 1.8);
+            
+            const rewardTypes = [
+                { name: 'Элитный термос стримера', price: rewardPrice, rarity: 'epic', icon: 'fa-mug-hot', color: 'text-pink-400' },
+                { name: 'Кастомная клавиатура Шоха', price: rewardPrice * 1.2, rarity: 'legendary', icon: 'fa-keyboard', color: 'text-amber-400' },
+                { name: 'Нож | Алхимический мусор', price: rewardPrice * 1.5, rarity: 'legendary', icon: 'fa-knife', color: 'text-amber-400' }
+            ];
+            const reward = rewardTypes[Math.floor(Math.random() * rewardTypes.length)];
+            const newItem = { ...reward, id: 'item_' + Date.now() };
+
+            state.inventory.unshift(newItem);
+            state.contractItems = [null, null, null, null, null];
+            updateBalanceUI();
+            switchTab('inventory');
+            showToast(`Контракт успешен! Получено: ${newItem.name} (${newItem.price} ₽)`, "success");
+        }
+
+        // --- LIVE TICKER & LEADERBOARD ---
+        function renderLiveTicker() {
+            const ticker = document.getElementById('live-ticker');
+            ticker.innerHTML = '';
+            liveDropsMock.forEach(drop => {
+                const rarityObj = rarities[drop.rarity];
+                ticker.innerHTML += `
+                    <div class="inline-flex items-center space-x-2 bg-gray-900 border ${rarityObj.badgeBg} px-3 py-1.5 rounded-xl shadow">
+                        <span class="text-xs font-bold text-gray-400">${drop.user}</span>
+                        <span class="text-xs font-black text-white">${drop.name}</span>
+                        <span class="text-xs font-extrabold text-amber-400">${drop.price} ₽</span>
+                    </div>
+                `;
+            });
+        }
+
+        function addLiveDrop(name, user, price, rarity) {
+            liveDropsMock.unshift({ name, user, price, rarity });
+            if (liveDropsMock.length > 15) liveDropsMock.pop();
+            renderLiveTicker();
+        }
+
+        function renderLeaderboard() {
+            const list = document.getElementById('leaderboard-list');
+            const leaders = [
+                { rank: 1, name: 'Shoxie666', score: 142500, avatar: '👑' },
+                { rank: 2, name: 'CS2_Meme_King', score: 98400, avatar: '🥈' },
+                { rank: 3, name: 'TrashMaster', score: 76200, avatar: '🥉' },
+                { rank: 4, name: 'LuckyViewer', score: 54100, avatar: '🎮' },
+                { rank: 5, name: 'GlobalTrash', score: 32000, avatar: '🔥' }
+            ];
+
+            list.innerHTML = '';
+            leaders.forEach(l => {
+                list.innerHTML += `
+                    <div class="grid grid-cols-12 px-6 py-4 items-center hover:bg-gray-800/40 transition-colors">
+                        <div class="col-span-2 font-black text-white flex items-center space-x-2">
+                            <span class="w-7 h-7 rounded-lg bg-gray-800 flex items-center justify-center text-xs text-orange-400">${l.rank}</span>
+                        </div>
+                        <div class="col-span-6 font-bold text-white flex items-center space-x-3">
+                            <span class="text-lg">${l.avatar}</span>
+                            <span>${l.name}</span>
+                        </div>
+                        <div class="col-span-4 text-right font-extrabold text-amber-400">
+                            ${l.score.toLocaleString()} ₽
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // --- MODALS & PROMOCODES ---
+        function openDepositModal() { playSound('click'); document.getElementById('deposit-modal').classList.remove('hidden'); }
+        function closeDepositModal() { playSound('click'); document.getElementById('deposit-modal').classList.add('hidden'); }
+        function addBalance(amount) {
+            playSound('click');
+            state.balance += amount;
+            updateBalanceUI();
+            closeDepositModal();
+            showToast(`Баланс пополнен на ${amount.toLocaleString()} ₽`, "success");
+        }
+
+        function openPromoModal() { playSound('click'); document.getElementById('promo-modal').classList.remove('hidden'); }
+        function closePromoModal() { playSound('click'); document.getElementById('promo-modal').classList.add('hidden'); }
+
+        function applyPromoCode() {
+            playSound('click');
+            const code = document.getElementById('promo-input').value.trim().toUpperCase();
+            const msg = document.getElementById('promo-msg');
+
+            if (state.usedPromos.includes(code)) {
+                msg.className = "text-xs font-semibold text-center text-red-400 h-4";
+                msg.innerText = "Промокод уже был активирован!";
+                return;
+            }
+
+            if (code === 'SHOX' || code === 'MUSEUM') {
+                state.balance += 1000;
+                state.usedPromos.push(code);
+                updateBalanceUI();
+                msg.className = "text-xs font-semibold text-center text-green-400 h-4";
+                msg.innerText = "+1,000 ₽ успешно зачислено!";
+                setTimeout(() => { closePromoModal(); }, 1500);
+                showToast("Промокод SHOX активирован (+1000 ₽)", "success");
+            } else {
+                msg.className = "text-xs font-semibold text-center text-red-400 h-4";
+                msg.innerText = "Неверный промокод!";
+            }
+        }
+
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(text, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const borderCol = type === 'success' ? 'border-green-500/50 bg-green-950/90 text-green-200' : 'border-orange-500/50 bg-gray-900/90 text-gray-200';
+            
+            toast.className = `px-4 py-3 rounded-2xl border ${borderCol} backdrop-blur-md shadow-xl text-xs font-bold flex items-center space-x-2 transform translate-y-2 opacity-0 transition-all duration-300 pointer-events-auto`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-circle-check text-green-400' : 'fa-circle-info text-orange-400'} text-sm"></i><span>${text}</span>`;
+            
+            container.appendChild(toast);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => { toast.remove(); }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
